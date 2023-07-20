@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Comics</title>
+    <script src="https://aframe.io/releases/1.0.4/aframe.min.js" src="https://unpkg.com/aframe-event-set-component@4.2.1/dist/aframe-event-set-component.min.js"></script>
+    <script>
+      AFRAME.registerComponent("display", {
+        schema:{
+          state:{type:"string",default:"places-list"},
+          selectedCard:{type:"string",default:"#card1"}
+        },
+
+        init: function () {
+          this.placesContainer = this.el;
+          this.createCards();
+        },
+
+        tick: function () {
+          const {state}=this.el.getAttribute("display")
+          if(state=="view"){
+            this.hideEl([this.placesContainer])
+            this.showView()
+          }
+        },
+        
+        hideEl: function (elList) {
+          elList.map((el)=>{el.setAttribute("visible",false)})
+        },
+
+        showView: function () {
+          const {selectedCard}=this.data
+          console.log(this.data)
+          console.log(this.el)
+          const skyEl=document.querySelector("#main-container")
+          skyEl.setAttribute("material",{src:"./4 comics.png",color:"#fff"})
+        },
+
+        createCards: function () {
+          const thumbNailsRef = [
+            {
+              id: "sonic-idw",
+              title: "sonic idw vol 1",
+              url: "./Sonic idw vol 1.jpg",
+            },
+            {
+              id: "spider-man",
+              title: "spider man",
+              url: "./Spider MAn.png",
+            },
+
+            {
+              id: "comix",
+              title: "COMIX",
+              url: "./COMIX.png",
+            },
+            {
+              id: "sonic-exe",
+              title: "Sonic exe",
+              url: "./Sonic exe vol 1.jpg",
+            }
+          ];
+          let prevoiusXPosition = -60;
+
+          for (var item of thumbNailsRef) {
+            const posX = prevoiusXPosition + 25;
+            const posY = 10;
+            const posZ = -40;
+            const position = { x: posX, y: posY, z: posZ };
+            prevoiusXPosition = posX;
+
+            const borderEl = this.createBorder(position, item.id);
+
+            const thumbNail = this.createThumbNail(item);
+            borderEl.appendChild(thumbNail);
+
+            const titleEl = this.createTitleEl(position, item);
+            borderEl.appendChild(titleEl);
+
+            this.placesContainer.appendChild(borderEl);
+
+          }
+        },
+        createBorder: function (position, id) {
+          const entityEl = document.createElement("a-entity");
+          entityEl.setAttribute("id", id);
+          entityEl.setAttribute("visible", true);
+          entityEl.setAttribute("geometry", {
+            primitive: "box",
+            height: 25,
+            width: 20,
+          });
+          entityEl.setAttribute("position", position);
+          entityEl.setAttribute("material", {
+            color: "#0077CC",
+            opacity: 1,
+          });
+          console.log(this.data)
+          console.log(this.el)
+
+          entityEl.setAttribute("cursor-listener", {});
+
+          return entityEl;
+        },
+        createThumbNail: function (item) {
+          const entityEl = document.createElement("a-entity");
+          entityEl.setAttribute("visible", true);
+          entityEl.setAttribute("geometry", {
+            primitive: "box",
+            height: 23,
+            width:18,
+            depth:1.2
+          });
+          entityEl.setAttribute("material", { src: item.url });
+
+          return entityEl;
+        },
+        createTitleEl: function (position, item) {
+          const entityEl = document.createElement("a-entity");
+          entityEl.setAttribute("text", {
+            font: "exo2bold",
+            align: "center",
+            width: 70,
+            color: "#e65100",
+            value: item.title,
+          });
+          const elPosition = position;
+          elPosition.y = -20;
+          entityEl.setAttribute("position", elPosition);
+          entityEl.setAttribute("visible", true);
+          
+          return entityEl;
+        },
+      });
+      AFRAME.registerComponent("cursor-listener", {
+        schema: {
+          selectedItemId: { default: "", type: "string" }
+        },
+        init: function () {
+          this.handleClickEvents();
+          this.handleMouseEnterEvents();
+          this.handleMouseLeaveEvents();
+        },
+        handleClickEvents: function () {
+          //Cursor 'click' Events
+          this.el.addEventListener("click", evt => {
+            const placesContainer = document.querySelector("#places-container");
+            const { state } = placesContainer.getAttribute("display");
+
+            if (state === "places-list") {
+              const id = this.el.getAttribute("id");
+              const placesId = ["sonic-idw", "spider-man", "comix", "sonic-exe"]
+              if (placesId.includes(id)) {
+                placesContainer.setAttribute("display", {
+                  state: "view",
+                  selectedCard: id
+                });
+              }
+            }
+          });
+        },
+        handlePlacesListState: function () {
+          const id = this.el.getAttribute("id");
+          const placesId = ["sonic-idw", "spider-man", "comix", "sonic-exe"];
+          if (placesId.includes(id)) {
+            const placeContainer = document.querySelector("#places-container");
+            placeContainer.setAttribute("cursor-listener", {
+              selectedItemId: id,
+            });
+            this.el.setAttribute("material", {
+              color: "#0cc",
+              opacity: 1,
+            });
+          }
+        },
+        handleMouseEnterEvents: function () {
+          //Cursor 'mouseenter' Events
+          this.el.addEventListener("mouseenter", () => {
+            this.handlePlacesListState();
+          });
+        },
+        handleMouseLeaveEvents: function () {
+          //Cursor 'mouseleave' Events
+          this.el.addEventListener("mouseleave", () => {
+            const { selectedItemId } = this.data;
+            if (selectedItemId) {
+              const el = document.querySelector(`#${selectedItemId}`);
+              const id = el.getAttribute("id");
+              if (id == selectedItemId) {
+                el.setAttribute("material", {
+                  color: "#0077CC",
+                  opacity: 1,
+                });
+              }
+            }
+          });
+        },
+      });
+    </script>
+  </head>
+  <body>
+    <a-scene id="main-scene">    
+      <a-sky id="main-container" radius="5000" color="#111"></a-sky>
+      <a-entity id="places-container" cursor-listener display></a-entity>
+      <a-camera id="camera" wasd-controls="enabled:false">
+        <a-entity
+          id="app-title"
+          position="0 0.73 -1"
+          text="font: exo2bold; align: center; width: 2; color: #f70; value: COMICS!"
+        >
+          <a-entity
+            id="app-subtitle"
+            position="0 -0.1 0"
+            text="font: dejavu; align: center; width: 1 color: #888; value: Choose comic"
+          ></a-entity>
+          <a-entity
+          id="camera-cursor"
+          cursor
+          position="0 0 -1"
+          geometry="primitive: ring; radiusInner: 0.03; radiusOuter: 0.06"
+          material="color: #0f0; shader: flat"
+          ></a-entity>
+        </a-entity>
+      </a-camera>
+    </a-scene>
+  </body>
+</html>
